@@ -181,9 +181,9 @@ export default function CategoriesPage() {
             hasActiveFilters
               ? handleReset
               : () => {
-                  setEditingCategory(null);
-                  setIsFormOpen(true);
-                }
+                setEditingCategory(null);
+                setIsFormOpen(true);
+              }
           }
         />
       ) : (
