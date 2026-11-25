@@ -1,5 +1,7 @@
 import {
   ArrowLeftRight,
+  BarChart3,
+  BellRing,
   Boxes,
   FolderTree,
   LayoutDashboard,
@@ -13,6 +15,8 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Products', icon: Package },
   { to: '/inventory', label: 'Inventory', icon: ArrowLeftRight },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/alerts', label: 'Alerts & Reorders', icon: BellRing },
   { to: '/categories', label: 'Categories', icon: FolderTree },
   { to: '/suppliers', label: 'Suppliers', icon: Truck },
 ];
@@ -84,10 +88,10 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="border-t border-slate-100 p-4">
           <div className="rounded-xl bg-emerald-50/70 p-3.5 ring-1 ring-emerald-100">
             <p className="text-xs font-semibold text-emerald-900">
-              Milestone 2 Active
+              Milestone 3 Active
             </p>
             <p className="mt-1 text-xs leading-relaxed text-emerald-700">
-              Stock Operations & Audit Trail enabled with negative-stock guard.
+              Valuation Analytics, Reorder Alerts & Notification Center active.
             </p>
           </div>
         </div>

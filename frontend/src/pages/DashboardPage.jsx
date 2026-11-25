@@ -11,6 +11,17 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { getAnalyticsOverview } from '../api/analyticsApi.js';
 import { extractApiError } from '../api/client.js';
 import { getDashboardSummary } from '../api/dashboardApi.js';
 import LoadingSpinner from '../components/common/LoadingSpinner.jsx';
@@ -27,6 +38,7 @@ import {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -34,8 +46,12 @@ export default function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await getDashboardSummary();
-      setSummary(data);
+      const [summaryData, analyticsData] = await Promise.all([
+        getDashboardSummary(),
+        getAnalyticsOverview({ days: 7 }),
+      ]);
+      setSummary(summaryData);
+      setAnalytics(analyticsData);
     } catch (err) {
       const { message } = extractApiError(err);
       setError(message);
@@ -66,6 +82,8 @@ export default function DashboardPage() {
   const lowStockProducts = summary?.lowStockProducts || [];
   const recentProducts = summary?.recentProducts || [];
   const recentMovements = summary?.recentMovements || [];
+  const stockTrends = analytics?.stockTrends || [];
+  const categoryInsights = analytics?.categoryInsights || [];
 
   const attentionCount = stats.lowStockCount + stats.outOfStockCount;
 
@@ -175,6 +193,120 @@ export default function DashboardPage() {
               </div>
               <ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-600" />
             </Link>
+          </div>
+
+          {/* Analytics Charts Preview */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900">
+                    7-Day Stock-In vs Stock-Out
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Recent daily unit movement trend
+                  </p>
+                </div>
+                <Link
+                  to="/analytics"
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                >
+                  Full analytics
+                </Link>
+              </div>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={stockTrends}
+                    margin={{ top: 5, right: 8, left: -12, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                    />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '0.75rem',
+                        borderColor: '#e2e8f0',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar
+                      dataKey="stockIn"
+                      name="Stock In"
+                      fill="#059669"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="stockOut"
+                      name="Stock Out"
+                      fill="#0284c7"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900">
+                    Category Valuation Snapshot
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Top categories by stock value ($)
+                  </p>
+                </div>
+                <Link
+                  to="/alerts"
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                >
+                  Reorder alerts
+                </Link>
+              </div>
+              {categoryInsights.length === 0 ? (
+                <div className="flex h-56 items-center justify-center text-xs text-slate-500">
+                  Add categories and products to visualize valuation.
+                </div>
+              ) : (
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={categoryInsights.slice(0, 6)}
+                      margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: '#64748b' }}
+                        tickFormatter={(val) => `$${val}`}
+                      />
+                      <Tooltip
+                        formatter={(val) => [formatCurrency(val), 'Valuation']}
+                        contentStyle={{
+                          borderRadius: '0.75rem',
+                          borderColor: '#e2e8f0',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Bar
+                        dataKey="totalValuation"
+                        name="Valuation"
+                        fill="#10b981"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </section>
           </div>
 
           {/* Middle Panels */}

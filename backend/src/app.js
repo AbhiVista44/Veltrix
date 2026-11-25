@@ -9,6 +9,7 @@ import supplierRoutes from './routes/supplierRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

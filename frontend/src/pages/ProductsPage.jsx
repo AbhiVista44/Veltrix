@@ -1,4 +1,11 @@
-import { ArrowLeftRight, Package, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Package,
+  Pencil,
+  Plus,
+  SlidersHorizontal,
+  Trash2,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -18,6 +25,7 @@ import StockMovementModal from '../components/inventory/StockMovementModal.jsx';
 import ProductFormModal from '../components/products/ProductFormModal.jsx';
 import { useDebounce } from '../hooks/useDebounce.js';
 import {
+  PRODUCT_UNITS,
   formatCurrency,
   formatNumber,
   getStockStatus,
@@ -29,6 +37,7 @@ const SORT_OPTIONS = [
   { value: 'sku', label: 'SKU' },
   { value: 'price', label: 'Unit Price' },
   { value: 'quantity', label: 'Stock Quantity' },
+  { value: 'reorderLevel', label: 'Reorder Level' },
 ];
 
 export default function ProductsPage() {
@@ -47,6 +56,16 @@ export default function ProductsPage() {
   const supplierFilter = searchParams.get('supplier') || '';
   const stockStatusFilter = searchParams.get('stockStatus') || '';
   const [statusFilter, setStatusFilter] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [unitFilter, setUnitFilter] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [minQty, setMinQty] = useState('');
+  const [maxQty, setMaxQty] = useState('');
+  const debouncedMinPrice = useDebounce(minPrice, 300);
+  const debouncedMaxPrice = useDebounce(maxPrice, 300);
+  const debouncedMinQty = useDebounce(minQty, 300);
+  const debouncedMaxQty = useDebounce(maxQty, 300);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [page, setPage] = useState(1);
@@ -110,6 +129,11 @@ export default function ProductsPage() {
         ...(supplierFilter ? { supplier: supplierFilter } : {}),
         ...(stockStatusFilter ? { stockStatus: stockStatusFilter } : {}),
         ...(statusFilter ? { status: statusFilter } : {}),
+        ...(unitFilter ? { unit: unitFilter } : {}),
+        ...(debouncedMinPrice !== '' ? { minPrice: debouncedMinPrice } : {}),
+        ...(debouncedMaxPrice !== '' ? { maxPrice: debouncedMaxPrice } : {}),
+        ...(debouncedMinQty !== '' ? { minQty: debouncedMinQty } : {}),
+        ...(debouncedMaxQty !== '' ? { maxQty: debouncedMaxQty } : {}),
       });
       setProducts(res.data || []);
       setPagination(res.pagination || null);
@@ -128,6 +152,11 @@ export default function ProductsPage() {
     supplierFilter,
     stockStatusFilter,
     statusFilter,
+    unitFilter,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+    debouncedMinQty,
+    debouncedMaxQty,
   ]);
 
   useEffect(() => {
@@ -151,18 +180,32 @@ export default function ProductsPage() {
   const handleResetFilters = () => {
     setSearch('');
     setStatusFilter('');
+    setUnitFilter('');
+    setMinPrice('');
+    setMaxPrice('');
+    setMinQty('');
+    setMaxQty('');
     setSortBy('createdAt');
     setSortOrder('desc');
     setPage(1);
     setSearchParams({}, { replace: true });
   };
 
+  const advancedFilterCount = [
+    unitFilter,
+    minPrice,
+    maxPrice,
+    minQty,
+    maxQty,
+  ].filter(Boolean).length;
+
   const hasActiveFilters = Boolean(
     search.trim() ||
       categoryFilter ||
       supplierFilter ||
       stockStatusFilter ||
-      statusFilter
+      statusFilter ||
+      advancedFilterCount > 0
   );
 
   const handleDeleteConfirm = async () => {
@@ -190,17 +233,36 @@ export default function ProductsPage() {
         title="Products"
         description="Manage product master records, SKU pricing, and reorder thresholds."
         actions={
-          <button
-            type="button"
-            onClick={() => {
-              setEditingProduct(null);
-              setIsFormOpen(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700"
-          >
-            <Plus className="h-4 w-4" />
-            Add Product
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${
+                showAdvanced || advancedFilterCount > 0
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>Advanced Filters</span>
+              {advancedFilterCount > 0 && (
+                <span className="rounded-full bg-emerald-600 px-1.5 py-0.5 text-[11px] font-bold text-white">
+                  {advancedFilterCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingProduct(null);
+                setIsFormOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700"
+            >
+              <Plus className="h-4 w-4" />
+              Add Product
+            </button>
+          </>
         }
       />
 
@@ -268,6 +330,99 @@ export default function ProductsPage() {
         hasActiveFilters={hasActiveFilters}
         onReset={handleResetFilters}
       />
+
+      {showAdvanced && (
+        <div className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <label className="text-xs font-medium text-slate-700">
+            <span className="mb-1 block font-semibold uppercase tracking-wide text-slate-500">
+              Min Price ($)
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={minPrice}
+              onChange={(e) => {
+                setMinPrice(e.target.value);
+                setPage(1);
+              }}
+              placeholder="0.00"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-700">
+            <span className="mb-1 block font-semibold uppercase tracking-wide text-slate-500">
+              Max Price ($)
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={maxPrice}
+              onChange={(e) => {
+                setMaxPrice(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Any"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-700">
+            <span className="mb-1 block font-semibold uppercase tracking-wide text-slate-500">
+              Min Quantity
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={minQty}
+              onChange={(e) => {
+                setMinQty(e.target.value);
+                setPage(1);
+              }}
+              placeholder="0"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-700">
+            <span className="mb-1 block font-semibold uppercase tracking-wide text-slate-500">
+              Max Quantity
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={maxQty}
+              onChange={(e) => {
+                setMaxQty(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Any"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-700">
+            <span className="mb-1 block font-semibold uppercase tracking-wide text-slate-500">
+              Unit Type
+            </span>
+            <select
+              value={unitFilter}
+              onChange={(e) => {
+                setUnitFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="">All Units</option>
+              {PRODUCT_UNITS.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       {loading ? (
         <LoadingSpinner message="Loading products..." />

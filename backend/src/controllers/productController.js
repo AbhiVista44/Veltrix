@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Product } from '../models/Product.js';
+import { Product, PRODUCT_UNITS } from '../models/Product.js';
 import { Category } from '../models/Category.js';
 import { Supplier } from '../models/Supplier.js';
 import { StockMovement } from '../models/StockMovement.js';
@@ -48,7 +48,18 @@ const ensureCategoryAndSupplierExist = async (categoryId, supplierId) => {
 
 export const getProducts = asyncHandler(async (req, res) => {
   const filter = {};
-  const { search, category, supplier, status, stockStatus } = req.query;
+  const {
+    search,
+    category,
+    supplier,
+    status,
+    stockStatus,
+    unit,
+    minPrice,
+    maxPrice,
+    minQty,
+    maxQty,
+  } = req.query;
 
   if (typeof search === 'string' && search.trim()) {
     const regex = new RegExp(escapeRegex(search.trim()), 'i');
@@ -69,17 +80,63 @@ export const getProducts = asyncHandler(async (req, res) => {
     filter.status = status;
   }
 
+  if (unit && PRODUCT_UNITS.includes(unit)) {
+    filter.unit = unit;
+  }
+
+  const priceRange = {};
+  if (minPrice !== undefined && minPrice !== '') {
+    const parsedMin = Number(minPrice);
+    if (Number.isFinite(parsedMin) && parsedMin >= 0) {
+      priceRange.$gte = parsedMin;
+    }
+  }
+  if (maxPrice !== undefined && maxPrice !== '') {
+    const parsedMax = Number(maxPrice);
+    if (Number.isFinite(parsedMax) && parsedMax >= 0) {
+      priceRange.$lte = parsedMax;
+    }
+  }
+  if (Object.keys(priceRange).length > 0) {
+    filter.price = priceRange;
+  }
+
+  const qtyRange = {};
+  if (minQty !== undefined && minQty !== '') {
+    const parsedMinQty = Number.parseInt(minQty, 10);
+    if (Number.isFinite(parsedMinQty) && parsedMinQty >= 0) {
+      qtyRange.$gte = parsedMinQty;
+    }
+  }
+  if (maxQty !== undefined && maxQty !== '') {
+    const parsedMaxQty = Number.parseInt(maxQty, 10);
+    if (Number.isFinite(parsedMaxQty) && parsedMaxQty >= 0) {
+      qtyRange.$lte = parsedMaxQty;
+    }
+  }
+  if (Object.keys(qtyRange).length > 0) {
+    filter.quantity = qtyRange;
+  }
+
   if (stockStatus === 'out_of_stock') {
-    filter.quantity = 0;
+    filter.$and = [...(filter.$and || []), { quantity: 0 }];
   } else if (stockStatus === 'low_stock') {
-    filter.$expr = {
-      $and: [
-        { $gt: ['$quantity', 0] },
-        { $lte: ['$quantity', '$reorderLevel'] },
-      ],
-    };
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $expr: {
+          $and: [
+            { $gt: ['$quantity', 0] },
+            { $lte: ['$quantity', '$reorderLevel'] },
+          ],
+        },
+      },
+    ];
   } else if (stockStatus === 'in_stock') {
-    filter.$expr = { $gt: ['$quantity', '$reorderLevel'] };
+    filter.$and = [
+      ...(filter.$and || []),
+      { $expr: { $gt: ['$quantity', '$reorderLevel'] } },
+    ];
   }
 
   if (req.query.all === 'true') {

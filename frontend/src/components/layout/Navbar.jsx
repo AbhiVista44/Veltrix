@@ -2,11 +2,12 @@ import { Menu, Plus, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getHealthStatus } from '../../api/dashboardApi.js';
+import NotificationCenter from './NotificationCenter.jsx';
 
 const PAGE_META = {
   '/': {
     title: 'Overview',
-    subtitle: 'Live inventory health and master data metrics',
+    subtitle: 'Live inventory health, valuation trends, and master metrics',
   },
   '/products': {
     title: 'Product Catalog',
@@ -15,6 +16,14 @@ const PAGE_META = {
   '/inventory': {
     title: 'Inventory Operations',
     subtitle: 'Stock-in, stock-out, adjustments, loss tracking, and audit log',
+  },
+  '/analytics': {
+    title: 'Analytics & Insights',
+    subtitle: 'Inventory valuation, movement trends, and category breakdown',
+  },
+  '/alerts': {
+    title: 'Alerts & Reorders',
+    subtitle: 'Low-stock alerts, out-of-stock risks, and reorder suggestions',
   },
   '/categories': {
     title: 'Categories',
@@ -68,7 +77,7 @@ export default function Navbar({ onMenuClick }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3">
         <button
           type="button"
           onClick={checkHealth}
@@ -89,6 +98,8 @@ export default function Navbar({ onMenuClick }) {
           </span>
           <RefreshCw className="h-3 w-3 opacity-60" />
         </button>
+
+        <NotificationCenter />
 
         <button
           type="button"

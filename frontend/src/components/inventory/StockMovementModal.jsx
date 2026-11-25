@@ -69,6 +69,8 @@ export default function StockMovementModal({
   products = [],
   initialProduct = null,
   initialType = 'stock_in',
+  initialQuantity = '',
+  initialReason = '',
   onSaved,
 }) {
   const [type, setType] = useState(initialType);
@@ -97,17 +99,17 @@ export default function StockMovementModal({
     const targetProductId = initialProduct?._id || '';
     setProductId(targetProductId);
     setAdjustmentMode('set');
-    setQuantity('1');
+    setQuantity(initialQuantity ? String(initialQuantity) : '1');
     setNewQuantity(
       initialProduct !== null && initialProduct?.quantity !== undefined
         ? String(initialProduct.quantity)
         : ''
     );
-    setReason('');
+    setReason(initialReason || '');
     setReference('');
     setNotes('');
     setPerformedBy('Inventory Operator');
-  }, [isOpen, initialProduct, initialType]);
+  }, [isOpen, initialProduct, initialType, initialQuantity, initialReason]);
 
   // Keep target count synced when user changes product in Adjustment "set" mode
   const handleProductChange = (event) => {
@@ -239,6 +241,7 @@ export default function StockMovementModal({
 
       const res = await createStockMovement(payload);
       toast.success(res.message || 'Inventory updated successfully');
+      window.dispatchEvent(new Event('veltrix:notifications-refresh'));
       onSaved(res.data);
       onClose();
     } catch (error) {
