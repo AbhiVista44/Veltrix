@@ -5,6 +5,13 @@ export const getProducts = async (params = {}) => {
   return data;
 };
 
+export const getAllProducts = async () => {
+  const { data } = await apiClient.get('/products', {
+    params: { all: 'true' },
+  });
+  return data.data || [];
+};
+
 export const getProductById = async (id) => {
   const { data } = await apiClient.get(`/products/${id}`);
   return data;

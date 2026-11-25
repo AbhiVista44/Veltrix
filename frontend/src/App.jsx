@@ -4,6 +4,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import AppLayout from './components/layout/AppLayout.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import InventoryPage from './pages/InventoryPage.jsx';
 import ProductsPage from './pages/ProductsPage.jsx';
 import SuppliersPage from './pages/SuppliersPage.jsx';
 
@@ -14,6 +15,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/suppliers" element={<SuppliersPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

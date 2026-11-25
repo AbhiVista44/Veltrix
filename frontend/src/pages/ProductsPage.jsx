@@ -1,4 +1,4 @@
-import { Package, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -14,6 +14,7 @@ import Pagination from '../components/common/Pagination.jsx';
 import SearchFilterBar from '../components/common/SearchFilterBar.jsx';
 import SortableHeader from '../components/common/SortableHeader.jsx';
 import StatusBadge from '../components/common/StatusBadge.jsx';
+import StockMovementModal from '../components/inventory/StockMovementModal.jsx';
 import ProductFormModal from '../components/products/ProductFormModal.jsx';
 import { useDebounce } from '../hooks/useDebounce.js';
 import {
@@ -54,6 +55,7 @@ export default function ProductsPage() {
   // Modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [stockProduct, setStockProduct] = useState(null);
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -383,6 +385,14 @@ export default function ProductsPage() {
                       <div className="inline-flex items-center justify-end gap-1">
                         <button
                           type="button"
+                          onClick={() => setStockProduct(product)}
+                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-sky-50 hover:text-sky-700"
+                          title="Update stock (In / Out / Adjust / Loss)"
+                        >
+                          <ArrowLeftRight className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             setEditingProduct(product);
                             setIsFormOpen(true);
@@ -428,6 +438,15 @@ export default function ProductsPage() {
         product={editingProduct}
         categories={categories}
         suppliers={suppliers}
+        onSaved={loadProducts}
+      />
+
+      <StockMovementModal
+        isOpen={Boolean(stockProduct)}
+        onClose={() => setStockProduct(null)}
+        products={products}
+        initialProduct={stockProduct}
+        initialType="stock_in"
         onSaved={loadProducts}
       />
 

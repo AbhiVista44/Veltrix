@@ -289,10 +289,15 @@ export default function ProductFormModal({
           </FormField>
 
           <FormField
-            label="Stock Quantity"
+            label={isEditing ? 'Current Stock Quantity' : 'Opening Stock Quantity'}
             htmlFor="product-quantity"
             required
             error={errors.quantity}
+            hint={
+              isEditing
+                ? 'Stock changes are managed via Inventory Movements to preserve your audit trail.'
+                : 'Initial units in stock (automatically logged as opening stock).'
+            }
           >
             <input
               id="product-quantity"
@@ -301,8 +306,11 @@ export default function ProductFormModal({
               step="1"
               value={form.quantity}
               onChange={handleChange('quantity')}
+              disabled={isEditing}
               placeholder="0"
-              className={inputClassName(errors.quantity)}
+              className={`${inputClassName(errors.quantity)} ${
+                isEditing ? 'cursor-not-allowed bg-slate-100 text-slate-500' : ''
+              }`}
             />
           </FormField>
 

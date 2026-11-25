@@ -20,6 +20,7 @@ import StatusBadge from '../components/common/StatusBadge.jsx';
 import {
   formatCurrency,
   formatDate,
+  formatDateTime,
   formatNumber,
   getStockStatus,
 } from '../utils/formatters.js';
@@ -64,6 +65,7 @@ export default function DashboardPage() {
   const categoryBreakdown = summary?.categoryBreakdown || [];
   const lowStockProducts = summary?.lowStockProducts || [];
   const recentProducts = summary?.recentProducts || [];
+  const recentMovements = summary?.recentMovements || [];
 
   const attentionCount = stats.lowStockCount + stats.outOfStockCount;
 
@@ -377,6 +379,108 @@ export default function DashboardPage() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* Recent Inventory Movements */}
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-900">
+                  Recent Inventory Movements
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Latest stock-in, stock-out, adjustment, and loss audit events
+                </p>
+              </div>
+              <Link
+                to="/inventory"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                View audit log
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {recentMovements.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm text-slate-500">
+                No stock movements recorded yet. Record a movement on the{' '}
+                <Link
+                  to="/inventory"
+                  className="font-semibold text-emerald-700 hover:underline"
+                >
+                  Inventory page
+                </Link>
+                .
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-200 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Product
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Type
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Change
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Before → After
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Reason
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        Timestamp
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {recentMovements.map((mov) => {
+                      const unit = mov.product?.unit || mov.productSnapshot?.unit || 'pcs';
+                      const isPositive = mov.quantityDelta > 0;
+                      return (
+                        <tr key={mov._id} className="hover:bg-slate-50/70">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-slate-900">
+                              {mov.product?.name || mov.productSnapshot?.name}
+                            </p>
+                            <p className="font-mono text-xs text-slate-500">
+                              {mov.product?.sku || mov.productSnapshot?.sku}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={mov.type} />
+                          </td>
+                          <td
+                            className={`px-4 py-3 text-right font-semibold ${
+                              isPositive ? 'text-emerald-700' : 'text-rose-600'
+                            }`}
+                          >
+                            {isPositive ? `+${mov.quantityDelta}` : mov.quantityDelta}{' '}
+                            {unit}
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs text-slate-600">
+                            {mov.previousQuantity} →{' '}
+                            <strong className="text-slate-900">
+                              {mov.newQuantity} {unit}
+                            </strong>
+                          </td>
+                          <td className="max-w-xs truncate px-4 py-3 text-xs text-slate-600">
+                            {mov.reason || '—'}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500">
+                            {formatDateTime(mov.createdAt)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

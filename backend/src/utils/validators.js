@@ -1,10 +1,12 @@
 import mongoose from 'mongoose';
 import { ApiError } from './ApiError.js';
 import { PRODUCT_UNITS } from '../models/Product.js';
+import { MOVEMENT_TYPES } from '../models/StockMovement.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SKU_REGEX = /^[A-Z0-9._-]+$/;
 const VALID_STATUSES = ['active', 'inactive'];
+const REASON_REQUIRED_TYPES = ['adjustment', 'damaged', 'expired', 'wasted'];
 
 export const assertValidObjectId = (id, label = 'Resource') => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -141,5 +143,106 @@ export const validateProductPayload = (body = {}) => {
     unit,
     description,
     status,
+  };
+};
+
+export const validateStockMovementPayload = (body = {}) => {
+  const errors = {};
+
+  const productId = body.product ? String(body.product).trim() : '';
+  const type = typeof body.type === 'string' ? body.type.trim() : '';
+  const adjustmentMode = body.adjustmentMode === 'set' ? 'set' : 'delta';
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+  const reference = typeof body.reference === 'string' ? body.reference.trim() : '';
+  const notes = typeof body.notes === 'string' ? body.notes.trim() : '';
+  const performedBy =
+    typeof body.performedBy === 'string' && body.performedBy.trim()
+      ? body.performedBy.trim()
+      : 'Inventory Operator';
+
+  if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+    errors.product = 'Please select a valid product';
+  }
+
+  if (!MOVEMENT_TYPES.includes(type)) {
+    errors.type = `Movement type must be one of: ${MOVEMENT_TYPES.join(', ')}`;
+  }
+
+  let quantity;
+  let quantityDelta;
+  let newQuantityTarget;
+
+  if (type === 'adjustment' && adjustmentMode === 'set') {
+    const parsedTarget = Number(body.newQuantity);
+    if (
+      body.newQuantity === '' ||
+      body.newQuantity === undefined ||
+      body.newQuantity === null ||
+      !Number.isInteger(parsedTarget) ||
+      parsedTarget < 0
+    ) {
+      errors.newQuantity = 'New stock count must be a whole number of 0 or greater';
+    } else {
+      newQuantityTarget = parsedTarget;
+    }
+  } else if (type === 'adjustment') {
+    const parsedDelta = Number(body.quantityDelta ?? body.quantity);
+    if (
+      (body.quantityDelta === '' || body.quantityDelta === undefined) &&
+      (body.quantity === '' || body.quantity === undefined)
+    ) {
+      errors.quantity = 'Adjustment quantity (+/-) is required';
+    } else if (!Number.isInteger(parsedDelta) || parsedDelta === 0) {
+      errors.quantity = 'Adjustment must be a non-zero whole number (e.g. 5 or -3)';
+    } else {
+      quantityDelta = parsedDelta;
+      quantity = Math.abs(parsedDelta);
+    }
+  } else {
+    const parsedQty = Number(body.quantity);
+    if (
+      body.quantity === '' ||
+      body.quantity === undefined ||
+      body.quantity === null ||
+      !Number.isInteger(parsedQty) ||
+      parsedQty < 1
+    ) {
+      errors.quantity = 'Quantity must be a whole number of at least 1';
+    } else {
+      quantity = parsedQty;
+    }
+  }
+
+  if (REASON_REQUIRED_TYPES.includes(type) && reason.length < 3) {
+    errors.reason = 'Please provide a reason (at least 3 characters)';
+  } else if (reason.length > 200) {
+    errors.reason = 'Reason cannot exceed 200 characters';
+  }
+
+  if (reference.length > 80) {
+    errors.reference = 'Reference cannot exceed 80 characters';
+  }
+  if (notes.length > 500) {
+    errors.notes = 'Notes cannot exceed 500 characters';
+  }
+  if (performedBy.length > 100) {
+    errors.performedBy = 'Operator name cannot exceed 100 characters';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(400, 'Please fix the highlighted stock movement fields', errors);
+  }
+
+  return {
+    productId,
+    type,
+    adjustmentMode,
+    quantity,
+    quantityDelta,
+    newQuantityTarget,
+    reason,
+    reference,
+    notes,
+    performedBy,
   };
 };

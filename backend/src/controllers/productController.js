@@ -2,8 +2,10 @@ import mongoose from 'mongoose';
 import { Product } from '../models/Product.js';
 import { Category } from '../models/Category.js';
 import { Supplier } from '../models/Supplier.js';
+import { StockMovement } from '../models/StockMovement.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
+import { applyStockMovement } from '../utils/inventoryService.js';
 import {
   buildPaginationMeta,
   escapeRegex,
@@ -80,6 +82,14 @@ export const getProducts = asyncHandler(async (req, res) => {
     filter.$expr = { $gt: ['$quantity', '$reorderLevel'] };
   }
 
+  if (req.query.all === 'true') {
+    const items = await Product.find(filter)
+      .select('name sku unit quantity reorderLevel price status')
+      .sort({ name: 1 })
+      .lean();
+    return res.json({ success: true, data: items });
+  }
+
   const { page, limit, skip } = parsePagination(req.query, 10, 100);
   const { sortObject } = parseSort(req.query, ALLOWED_SORT_FIELDS);
 
@@ -119,6 +129,33 @@ export const createProduct = asyncHandler(async (req, res) => {
   await ensureCategoryAndSupplierExist(payload.category, payload.supplier);
 
   const product = await Product.create(payload);
+
+  // Record opening stock in the inventory audit trail if initial quantity > 0
+  if (payload.quantity > 0) {
+    try {
+      await StockMovement.create({
+        product: product._id,
+        productSnapshot: {
+          name: product.name,
+          sku: product.sku,
+          unit: product.unit,
+        },
+        type: 'stock_in',
+        quantity: payload.quantity,
+        quantityDelta: payload.quantity,
+        previousQuantity: 0,
+        newQuantity: payload.quantity,
+        unitPriceSnapshot: Number(product.price || 0),
+        totalValue: Number((product.price * payload.quantity).toFixed(2)),
+        reason: 'Initial opening stock',
+        performedBy: 'System (Product Setup)',
+      });
+    } catch (error) {
+      await product.deleteOne();
+      throw error;
+    }
+  }
+
   await product.populate([
     { path: 'category', select: 'name status' },
     { path: 'supplier', select: 'name contactPerson status' },
@@ -142,17 +179,34 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
   await ensureCategoryAndSupplierExist(payload.category, payload.supplier);
 
-  Object.assign(product, payload);
+  const previousQuantity = product.quantity;
+  const { quantity: requestedQuantity, ...metadataPayload } = payload;
+
+  Object.assign(product, metadataPayload);
   await product.save();
-  await product.populate([
-    { path: 'category', select: 'name status' },
-    { path: 'supplier', select: 'name contactPerson status' },
-  ]);
+
+  let updatedProduct = product;
+  if (requestedQuantity !== previousQuantity) {
+    const result = await applyStockMovement({
+      productId: product._id,
+      type: 'adjustment',
+      adjustmentMode: 'set',
+      newQuantityTarget: requestedQuantity,
+      reason: 'Catalog product update',
+      performedBy: 'Inventory Operator',
+    });
+    updatedProduct = result.product;
+  } else {
+    await updatedProduct.populate([
+      { path: 'category', select: 'name status' },
+      { path: 'supplier', select: 'name contactPerson status' },
+    ]);
+  }
 
   res.json({
     success: true,
     message: 'Product updated successfully',
-    data: product,
+    data: updatedProduct,
   });
 });
 

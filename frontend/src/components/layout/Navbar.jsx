@@ -12,6 +12,10 @@ const PAGE_META = {
     title: 'Product Catalog',
     subtitle: 'Manage SKUs, pricing, stock quantities, and reorder thresholds',
   },
+  '/inventory': {
+    title: 'Inventory Operations',
+    subtitle: 'Stock-in, stock-out, adjustments, loss tracking, and audit log',
+  },
   '/categories': {
     title: 'Categories',
     subtitle: 'Organize products into structured inventory groups',

@@ -1,6 +1,7 @@
 import { Product } from '../models/Product.js';
 import { Category } from '../models/Category.js';
 import { Supplier } from '../models/Supplier.js';
+import { StockMovement } from '../models/StockMovement.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 
 export const getDashboardSummary = asyncHandler(async (_req, res) => {
@@ -13,6 +14,7 @@ export const getDashboardSummary = asyncHandler(async (_req, res) => {
     categoryBreakdown,
     lowStockProducts,
     recentProducts,
+    recentMovements,
   ] = await Promise.all([
     Product.aggregate([
       {
@@ -82,6 +84,10 @@ export const getDashboardSummary = asyncHandler(async (_req, res) => {
       .populate('supplier', 'name')
       .sort({ createdAt: -1 })
       .limit(6),
+    StockMovement.find()
+      .populate('product', 'name sku unit')
+      .sort({ createdAt: -1 })
+      .limit(6),
   ]);
 
   const rawStats = productAgg[0] || {};
@@ -106,6 +112,7 @@ export const getDashboardSummary = asyncHandler(async (_req, res) => {
       categoryBreakdown,
       lowStockProducts,
       recentProducts,
+      recentMovements,
     },
   });
 });
