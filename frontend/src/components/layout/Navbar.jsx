@@ -33,6 +33,10 @@ const PAGE_META = {
     title: 'Suppliers',
     subtitle: 'Maintain vendor contacts and supply chain partners',
   },
+  '/users': {
+    title: 'Team & Access',
+    subtitle: 'Manage Admin and Staff accounts and permissions',
+  },
 };
 
 export default function Navbar({ onMenuClick }) {
@@ -61,8 +65,8 @@ export default function Navbar({ onMenuClick }) {
   const isConnected = health.database === 'connected';
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur-sm sm:px-6">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-3 backdrop-blur-sm sm:px-6">
+      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <button
           type="button"
           onClick={onMenuClick}
@@ -71,18 +75,22 @@ export default function Navbar({ onMenuClick }) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div>
-          <p className="text-sm font-semibold text-slate-900">{meta.title}</p>
-          <p className="hidden text-xs text-slate-500 sm:block">{meta.subtitle}</p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {meta.title}
+          </p>
+          <p className="hidden truncate text-xs text-slate-500 md:block">
+            {meta.subtitle}
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={checkHealth}
           title="Click to refresh API & MongoDB connection status"
-          className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium ring-1 transition-colors sm:px-3 ${
             isConnected
               ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100/70'
               : 'bg-rose-50 text-rose-700 ring-rose-200 hover:bg-rose-100/70'
@@ -104,10 +112,10 @@ export default function Navbar({ onMenuClick }) {
         <button
           type="button"
           onClick={() => navigate('/products?new=1')}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700 sm:text-sm"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-700 sm:px-3.5 sm:text-sm"
         >
           <Plus className="h-4 w-4" />
-          <span>Add Product</span>
+          <span className="hidden sm:inline">Add Product</span>
         </button>
       </div>
     </header>

@@ -35,6 +35,15 @@ export const errorHandler = (err, _req, res, _next) => {
     errors = { [friendlyField]: message };
   }
 
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Session expired or invalid token. Please sign in again.';
+  }
+
+  if (err.message && err.message.includes('not allowed by CORS')) {
+    statusCode = 403;
+  }
+
   if (statusCode >= 500) {
     console.error('Server Error:', err);
   }

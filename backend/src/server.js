@@ -2,6 +2,7 @@ import 'dotenv/config';
 import mongoose from 'mongoose';
 import app from './app.js';
 import { connectDB } from './config/db.js';
+import { getJwtSecret, isAuthEnabled } from './middleware/authMiddleware.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 
@@ -9,9 +10,15 @@ let server;
 
 const startServer = async () => {
   try {
+    if (isAuthEnabled()) {
+      getJwtSecret();
+    }
+
     await connectDB();
     server = app.listen(PORT, () => {
-      console.log(`Veltrix API listening on http://localhost:${PORT}`);
+      console.log(
+        `Veltrix API listening on port ${PORT} (auth=${isAuthEnabled() ? 'enabled' : 'disabled'})`
+      );
     });
   } catch (error) {
     console.error('Failed to start server:', error.message);

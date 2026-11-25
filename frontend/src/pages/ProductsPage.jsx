@@ -23,6 +23,7 @@ import SortableHeader from '../components/common/SortableHeader.jsx';
 import StatusBadge from '../components/common/StatusBadge.jsx';
 import StockMovementModal from '../components/inventory/StockMovementModal.jsx';
 import ProductFormModal from '../components/products/ProductFormModal.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useDebounce } from '../hooks/useDebounce.js';
 import {
   PRODUCT_UNITS,
@@ -41,6 +42,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProductsPage() {
+  const { isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
@@ -560,8 +562,13 @@ export default function ProductsPage() {
                         <button
                           type="button"
                           onClick={() => setDeletingProduct(product)}
-                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                          title="Delete product"
+                          disabled={!isAdmin}
+                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-35"
+                          title={
+                            isAdmin
+                              ? 'Delete product'
+                              : 'Admin role required to delete products'
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

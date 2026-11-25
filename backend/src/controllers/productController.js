@@ -205,7 +205,10 @@ export const createProduct = asyncHandler(async (req, res) => {
         unitPriceSnapshot: Number(product.price || 0),
         totalValue: Number((product.price * payload.quantity).toFixed(2)),
         reason: 'Initial opening stock',
-        performedBy: 'System (Product Setup)',
+        performedBy:
+          req.user && !req.user.isGuestMode
+            ? `${req.user.name} (${req.user.role})`
+            : 'System (Product Setup)',
       });
     } catch (error) {
       await product.deleteOne();
@@ -250,7 +253,10 @@ export const updateProduct = asyncHandler(async (req, res) => {
       adjustmentMode: 'set',
       newQuantityTarget: requestedQuantity,
       reason: 'Catalog product update',
-      performedBy: 'Inventory Operator',
+      performedBy:
+        req.user && !req.user.isGuestMode
+          ? `${req.user.name} (${req.user.role})`
+          : 'Inventory Operator',
     });
     updatedProduct = result.product;
   } else {

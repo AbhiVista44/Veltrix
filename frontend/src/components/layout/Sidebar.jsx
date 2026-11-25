@@ -4,14 +4,20 @@ import {
   BellRing,
   Boxes,
   FolderTree,
+  KeyRound,
   LayoutDashboard,
+  LogOut,
   Package,
   Truck,
+  Users,
   X,
 } from 'lucide-react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.jsx';
+import ChangePasswordModal from '../auth/ChangePasswordModal.jsx';
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Products', icon: Package },
   { to: '/inventory', label: 'Inventory', icon: ArrowLeftRight },
@@ -22,6 +28,17 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
+  const { authEnabled, user, isAdmin, logout } = useAuth();
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+
+  const navItems =
+    authEnabled && isAdmin
+      ? [
+          ...BASE_NAV_ITEMS,
+          { to: '/users', label: 'Team & Access', icon: Users },
+        ]
+      : BASE_NAV_ITEMS;
+
   return (
     <>
       {isOpen && (
@@ -61,11 +78,11 @@ export default function Sidebar({ isOpen, onClose }) {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             Workspace
           </p>
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -86,16 +103,55 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         <div className="border-t border-slate-100 p-4">
-          <div className="rounded-xl bg-emerald-50/70 p-3.5 ring-1 ring-emerald-100">
-            <p className="text-xs font-semibold text-emerald-900">
-              Milestone 3 Active
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-emerald-700">
-              Valuation Analytics, Reorder Alerts & Notification Center active.
-            </p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold text-slate-900">
+                  {user?.name || 'Inventory Operator'}
+                </p>
+                <p className="truncate text-[11px] text-slate-500">
+                  {authEnabled ? user?.email : 'Open Access Mode'}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  user?.role === 'admin'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-sky-100 text-sky-800'
+                }`}
+              >
+                {authEnabled ? user?.role || 'staff' : 'open'}
+              </span>
+            </div>
+
+            {authEnabled && !user?.isGuestMode && (
+              <div className="mt-3 flex items-center gap-2 border-t border-slate-200/80 pt-2.5">
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalOpen(true)}
+                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <KeyRound className="h-3 w-3" />
+                  Password
+                </button>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
+                >
+                  <LogOut className="h-3 w-3" />
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>
+
+      <ChangePasswordModal
+        isOpen={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
     </>
   );
 }

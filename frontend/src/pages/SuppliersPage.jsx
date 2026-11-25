@@ -13,6 +13,7 @@ import SearchFilterBar from '../components/common/SearchFilterBar.jsx';
 import SortableHeader from '../components/common/SortableHeader.jsx';
 import StatusBadge from '../components/common/StatusBadge.jsx';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useDebounce } from '../hooks/useDebounce.js';
 
 const SORT_OPTIONS = [
@@ -24,6 +25,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function SuppliersPage() {
+  const { isAdmin } = useAuth();
   const [suppliers, setSuppliers] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -288,8 +290,13 @@ export default function SuppliersPage() {
                         <button
                           type="button"
                           onClick={() => setDeletingSupplier(supplier)}
-                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                          title="Delete supplier"
+                          disabled={!isAdmin}
+                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-35"
+                          title={
+                            isAdmin
+                              ? 'Delete supplier'
+                              : 'Admin role required to delete suppliers'
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -246,3 +246,107 @@ export const validateStockMovementPayload = (body = {}) => {
     performedBy,
   };
 };
+
+export const validateRegisterPayload = (body = {}, { allowRole = false } = {}) => {
+  const errors = {};
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const password = typeof body.password === 'string' ? body.password : '';
+  const role = allowRole && body.role ? String(body.role).trim() : 'staff';
+
+  if (name.length < 2 || name.length > 80) {
+    errors.name = 'Full name must be between 2 and 80 characters';
+  }
+  if (!EMAIL_REGEX.test(email)) {
+    errors.email = 'Please provide a valid email address';
+  }
+  if (password.length < 6 || password.length > 100) {
+    errors.password = 'Password must be between 6 and 100 characters';
+  }
+  if (!['admin', 'staff'].includes(role)) {
+    errors.role = 'Role must be admin or staff';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(400, 'Please fix the highlighted user fields', errors);
+  }
+
+  return { name, email, password, role };
+};
+
+export const validateLoginPayload = (body = {}) => {
+  const errors = {};
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const password = typeof body.password === 'string' ? body.password : '';
+
+  if (!EMAIL_REGEX.test(email)) {
+    errors.email = 'Please enter a valid email address';
+  }
+  if (!password) {
+    errors.password = 'Password is required';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(400, 'Please enter valid login credentials', errors);
+  }
+
+  return { email, password };
+};
+
+export const validateUserUpdatePayload = (body = {}) => {
+  const errors = {};
+  const updates = {};
+
+  if (body.name !== undefined) {
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (name.length < 2 || name.length > 80) {
+      errors.name = 'Name must be between 2 and 80 characters';
+    } else {
+      updates.name = name;
+    }
+  }
+
+  if (body.role !== undefined) {
+    const role = String(body.role).trim();
+    if (!['admin', 'staff'].includes(role)) {
+      errors.role = 'Role must be admin or staff';
+    } else {
+      updates.role = role;
+    }
+  }
+
+  if (body.status !== undefined) {
+    const status = String(body.status).trim();
+    if (!VALID_STATUSES.includes(status)) {
+      errors.status = 'Status must be active or inactive';
+    } else {
+      updates.status = status;
+    }
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(400, 'Please fix the highlighted fields', errors);
+  }
+
+  return updates;
+};
+
+export const validatePasswordChangePayload = (body = {}) => {
+  const errors = {};
+  const currentPassword =
+    typeof body.currentPassword === 'string' ? body.currentPassword : '';
+  const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+
+  if (!currentPassword) {
+    errors.currentPassword = 'Current password is required';
+  }
+  if (newPassword.length < 6 || newPassword.length > 100) {
+    errors.newPassword = 'New password must be between 6 and 100 characters';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(400, 'Please fix the highlighted password fields', errors);
+  }
+
+  return { currentPassword, newPassword };
+};

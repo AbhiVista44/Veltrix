@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { extractApiError } from '../../api/client.js';
 import { createStockMovement } from '../../api/inventoryApi.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import FormField, { inputClassName } from '../common/FormField.jsx';
 import Modal from '../common/Modal.jsx';
 
@@ -73,6 +74,7 @@ export default function StockMovementModal({
   initialReason = '',
   onSaved,
 }) {
+  const { authEnabled, user } = useAuth();
   const [type, setType] = useState(initialType);
   const [productId, setProductId] = useState('');
   const [adjustmentMode, setAdjustmentMode] = useState('set');
@@ -108,8 +110,12 @@ export default function StockMovementModal({
     setReason(initialReason || '');
     setReference('');
     setNotes('');
-    setPerformedBy('Inventory Operator');
-  }, [isOpen, initialProduct, initialType, initialQuantity, initialReason]);
+    setPerformedBy(
+      authEnabled && user?.name
+        ? `${user.name} (${user.role})`
+        : 'Inventory Operator'
+    );
+  }, [isOpen, initialProduct, initialType, initialQuantity, initialReason, authEnabled, user]);
 
   // Keep target count synced when user changes product in Adjustment "set" mode
   const handleProductChange = (event) => {
@@ -543,8 +549,13 @@ export default function StockMovementModal({
               type="text"
               value={performedBy}
               onChange={(e) => setPerformedBy(e.target.value)}
+              disabled={authEnabled && Boolean(user?.name)}
               placeholder="Inventory Operator"
-              className={inputClassName(errors.performedBy)}
+              className={`${inputClassName(errors.performedBy)} ${
+                authEnabled && user?.name
+                  ? 'cursor-not-allowed bg-slate-100 text-slate-600'
+                  : ''
+              }`}
             />
           </FormField>
 

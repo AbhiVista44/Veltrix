@@ -37,6 +37,9 @@ const MOVEMENT_SUCCESS_LABELS = {
 
 export const createStockMovement = asyncHandler(async (req, res) => {
   const payload = validateStockMovementPayload(req.body);
+  if (req.user && !req.user.isGuestMode) {
+    payload.performedBy = `${req.user.name} (${req.user.role})`;
+  }
   const { product, movement } = await applyStockMovement(payload);
 
   res.status(201).json({

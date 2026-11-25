@@ -13,6 +13,7 @@ import Pagination from '../components/common/Pagination.jsx';
 import SearchFilterBar from '../components/common/SearchFilterBar.jsx';
 import SortableHeader from '../components/common/SortableHeader.jsx';
 import StatusBadge from '../components/common/StatusBadge.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useDebounce } from '../hooks/useDebounce.js';
 import { formatDate } from '../utils/formatters.js';
 
@@ -24,6 +25,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function CategoriesPage() {
+  const { isAdmin } = useAuth();
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -269,8 +271,13 @@ export default function CategoriesPage() {
                         <button
                           type="button"
                           onClick={() => setDeletingCategory(category)}
-                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                          title="Delete category"
+                          disabled={!isAdmin}
+                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-35"
+                          title={
+                            isAdmin
+                              ? 'Delete category'
+                              : 'Admin role required to delete categories'
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
