@@ -75,6 +75,16 @@ app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/setup', authLimiter);
 
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    name: 'Veltrix Inventory Management API',
+    status: 'ok',
+    database: getDbStatus(),
+    health: '/api/health',
+  });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({
     success: true,

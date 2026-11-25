@@ -55,7 +55,13 @@ after(async () => {
 });
 
 describe('Veltrix Inventory Management System API', () => {
-  it('reports health status and blocks unauthenticated access when AUTH_ENABLED=true', async () => {
+  it('reports root & health status and blocks unauthenticated access when AUTH_ENABLED=true', async () => {
+    const rootRes = await fetch(baseUrl.replace(/\/api$/, '/'));
+    assert.equal(rootRes.status, 200);
+    const rootData = await rootRes.json();
+    assert.equal(rootData.status, 'ok');
+    assert.equal(rootData.health, '/api/health');
+
     const health = await api('/health');
     assert.equal(health.status, 200);
     assert.equal(health.data.database, 'connected');
